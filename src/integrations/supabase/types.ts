@@ -14,7 +14,122 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      attendees: {
+        Row: {
+          check_in_time: string | null
+          checked_in: boolean
+          email: string
+          event_id: string
+          id: string
+          name: string
+          registration_time: string
+        }
+        Insert: {
+          check_in_time?: string | null
+          checked_in?: boolean
+          email: string
+          event_id: string
+          id?: string
+          name: string
+          registration_time?: string
+        }
+        Update: {
+          check_in_time?: string | null
+          checked_in?: boolean
+          email?: string
+          event_id?: string
+          id?: string
+          name?: string
+          registration_time?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attendees_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          created_at: string
+          current_attendees: number
+          date: string
+          description: string | null
+          id: string
+          location: string
+          max_attendees: number
+          organizer_id: string
+          qr_code: string | null
+          status: string
+          time: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_attendees?: number
+          date: string
+          description?: string | null
+          id?: string
+          location: string
+          max_attendees?: number
+          organizer_id: string
+          qr_code?: string | null
+          status?: string
+          time: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_attendees?: number
+          date?: string
+          description?: string | null
+          id?: string
+          location?: string
+          max_attendees?: number
+          organizer_id?: string
+          qr_code?: string | null
+          status?: string
+          time?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          email: string
+          full_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          email: string
+          full_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          email?: string
+          full_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

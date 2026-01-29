@@ -1,59 +1,37 @@
-import { useState, useMemo } from 'react';
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { QRCodeSVG } from 'qrcode.react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
 import { Check, Zap, Calendar, MapPin, Clock, User, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { mockEvents } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { usePublicEvent } from '@/hooks/useEvents';
 import { toast } from '@/hooks/use-toast';
+
+const checkInSchema = z.object({
+  name: z.string().trim().min(2, 'Name must be at least 2 characters').max(100),
+  email: z.string().trim().email('Please enter a valid email').max(255),
+});
+
+type CheckInFormData = z.infer<typeof checkInSchema>;
 
 const CheckIn = () => {
   const { id } = useParams();
+  const { event, loading, registerAndCheckIn } = usePublicEvent(id);
   const [isCheckedIn, setIsCheckedIn] = useState(false);
-  const [name, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const event = useMemo(() => mockEvents.find((e) => e.id === id), [id]);
-
-  if (!event) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background p-4">
-        <Card className="max-w-md w-full text-center">
-          <CardContent className="pt-6">
-            <h1 className="text-2xl font-bold text-foreground mb-4">
-              Event Not Found
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              The event you're trying to check in to doesn't exist.
-            </p>
-            <Link to="/">
-              <Button variant="default">Go to Home</Button>
-            </Link>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  const handleCheckIn = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setIsSubmitting(true);
-
-    // Simulate check-in
-    await new Promise((resolve) => setTimeout(resolve, 1500));
-
-    setIsCheckedIn(true);
-    setIsSubmitting(false);
-
-    toast({
-      title: 'Check-in successful!',
-      description: `You're now checked in to ${event.title}`,
-    });
-  };
+  const {
+    register,
+    handleSubmit,
+    formState: { errors, isSubmitting },
+  } = useForm<CheckInFormData>({
+    resolver: zodResolver(checkInSchema),
+  });
 
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -64,6 +42,89 @@ const CheckIn = () => {
       day: 'numeric',
     });
   };
+
+  const onSubmit = async (data: CheckInFormData) => {
+    const { error } = await registerAndCheckIn(data.name, data.email);
+
+    if (error) {
+      let message = error.message;
+      if (message.includes('duplicate key')) {
+        message = 'You are already registered for this event.';
+      }
+      toast({
+        title: 'Check-in failed',
+        description: message,
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    setIsCheckedIn(true);
+    toast({
+      title: 'Check-in successful!',
+      description: `You're now checked in to ${event?.title}`,
+    });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <div className="w-full max-w-md">
+          <Skeleton className="h-10 w-40 mx-auto mb-8" />
+          <Card>
+            <CardContent className="pt-6 space-y-4">
+              <Skeleton className="h-6 w-48 mx-auto" />
+              <Skeleton className="h-4 w-32 mx-auto" />
+              <Skeleton className="h-24 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
+  }
+
+  if (!event) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-6">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              Event Not Found
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              The event you're trying to check in to doesn't exist or has been removed.
+            </p>
+            <Link to="/">
+              <Button variant="default">Go to Home</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  if (event.status === 'ended') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background p-4">
+        <Card className="max-w-md w-full text-center">
+          <CardContent className="pt-6">
+            <h1 className="text-2xl font-bold text-foreground mb-4">
+              Event Has Ended
+            </h1>
+            <p className="text-muted-foreground mb-6">
+              This event has already ended. Check-in is no longer available.
+            </p>
+            <Link to="/">
+              <Button variant="default">Go to Home</Button>
+            </Link>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (isCheckedIn) {
     return (
@@ -161,20 +222,21 @@ const CheckIn = () => {
               </div>
             </div>
 
-            <form onSubmit={handleCheckIn} className="space-y-4">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="name">Full Name</Label>
                 <div className="relative">
                   <User className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input
                     id="name"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
                     placeholder="Enter your name"
                     className="pl-10"
-                    required
+                    {...register('name')}
                   />
                 </div>
+                {errors.name && (
+                  <p className="text-sm text-destructive">{errors.name.message}</p>
+                )}
               </div>
 
               <div className="space-y-2">
@@ -184,13 +246,14 @@ const CheckIn = () => {
                   <Input
                     id="email"
                     type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
                     placeholder="you@example.com"
                     className="pl-10"
-                    required
+                    {...register('email')}
                   />
                 </div>
+                {errors.email && (
+                  <p className="text-sm text-destructive">{errors.email.message}</p>
+                )}
               </div>
 
               <Button

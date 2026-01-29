@@ -1,45 +1,64 @@
 import { motion } from 'framer-motion';
 import { Calendar, Users, TrendingUp, Activity } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { mockAnalytics } from '@/data/mockData';
+import { useAnalytics } from '@/hooks/useAnalytics';
 import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
-
-const stats = [
-  {
-    label: 'Total Events',
-    value: mockAnalytics.totalEvents,
-    change: '+12%',
-    trend: 'up',
-    icon: Calendar,
-    color: 'primary',
-  },
-  {
-    label: 'Active Events',
-    value: mockAnalytics.activeEvents,
-    change: '+1',
-    trend: 'up',
-    icon: Activity,
-    color: 'success',
-  },
-  {
-    label: 'Total Attendees',
-    value: mockAnalytics.totalAttendees,
-    change: '+23%',
-    trend: 'up',
-    icon: Users,
-    color: 'accent',
-  },
-  {
-    label: 'Check-In Rate',
-    value: `${mockAnalytics.checkInRate}%`,
-    change: '+5%',
-    trend: 'up',
-    icon: TrendingUp,
-    color: 'primary',
-  },
-];
+import { Skeleton } from '@/components/ui/skeleton';
 
 export const StatsCards = () => {
+  const { analytics, loading } = useAnalytics();
+
+  const stats = [
+    {
+      label: 'Total Events',
+      value: analytics.totalEvents,
+      change: '+12%',
+      trend: 'up',
+      icon: Calendar,
+      color: 'primary',
+    },
+    {
+      label: 'Active Events',
+      value: analytics.activeEvents,
+      change: '+1',
+      trend: 'up',
+      icon: Activity,
+      color: 'success',
+    },
+    {
+      label: 'Total Attendees',
+      value: analytics.totalAttendees,
+      change: '+23%',
+      trend: 'up',
+      icon: Users,
+      color: 'accent',
+    },
+    {
+      label: 'Check-In Rate',
+      value: `${analytics.checkInRate}%`,
+      change: '+5%',
+      trend: 'up',
+      icon: TrendingUp,
+      color: 'primary',
+    },
+  ];
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} variant="stats">
+            <CardContent className="p-6">
+              <Skeleton className="h-4 w-20 mb-2" />
+              <Skeleton className="h-8 w-16 mb-2" />
+              <Skeleton className="h-3 w-24" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    );
+  }
+
   return (
     <motion.div
       variants={staggerContainer}

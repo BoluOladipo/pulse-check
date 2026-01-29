@@ -1,5 +1,5 @@
-import { useState, useMemo } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   ArrowLeft,
@@ -8,9 +8,7 @@ import {
   MapPin,
   Users,
   QrCode,
-  Download,
   Edit,
-  Trash2,
 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AttendeesTable } from '@/components/dashboard/AttendeesTable';
@@ -19,18 +17,41 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { mockEvents, mockAttendees } from '@/data/mockData';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useAuth } from '@/hooks/useAuth';
+import { useEventById, Event } from '@/hooks/useEvents';
 import { toast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 const EventDetails = () => {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, loading: authLoading } = useAuth();
+  const { event, attendees, loading, checkInAttendee } = useEventById(id);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
 
-  const event = mockEvents.find((e) => e.id === id);
-  const attendees = useMemo(
-    () => mockAttendees.filter((a) => a.eventId === id),
-    [id]
-  );
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  if (loading || authLoading) {
+    return (
+      <MainLayout showFooter={false}>
+        <div className="container mx-auto px-4 py-8">
+          <Skeleton className="h-8 w-32 mb-6" />
+          <Skeleton className="h-12 w-64 mb-4" />
+          <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 mb-8">
+            {[1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-24" />
+            ))}
+          </div>
+          <Skeleton className="h-[400px]" />
+        </div>
+      </MainLayout>
+    );
+  }
 
   if (!event) {
     return (
@@ -74,16 +95,13 @@ const EventDetails = () => {
   };
 
   const attendancePercentage = Math.round(
-    (event.currentAttendees / event.maxAttendees) * 100
+    (event.current_attendees / event.max_attendees) * 100
   );
 
-  const checkedInCount = attendees.filter((a) => a.checkedIn).length;
+  const checkedInCount = attendees.filter((a) => a.checked_in).length;
 
-  const handleCheckIn = (attendeeId: string) => {
-    toast({
-      title: 'Attendee checked in!',
-      description: 'The attendee has been marked as checked in.',
-    });
+  const handleCheckIn = async (attendeeId: string) => {
+    await checkInAttendee(attendeeId);
   };
 
   const handleExportCSV = () => {
@@ -94,9 +112,9 @@ const EventDetails = () => {
         [
           a.name,
           a.email,
-          a.registrationTime,
-          a.checkedIn ? 'Yes' : 'No',
-          a.checkInTime || '',
+          a.registration_time,
+          a.checked_in ? 'Yes' : 'No',
+          a.check_in_time || '',
         ].join(',')
       ),
     ].join('\n');
@@ -213,7 +231,7 @@ const EventDetails = () => {
                   <div>
                     <p className="text-xs text-muted-foreground">Capacity</p>
                     <p className="font-medium text-foreground">
-                      {event.currentAttendees} / {event.maxAttendees}
+                      {event.current_attendees} / {event.max_attendees}
                     </p>
                   </div>
                 </CardContent>
@@ -240,7 +258,7 @@ const EventDetails = () => {
                 </div>
                 <Progress value={attendancePercentage} className="h-2 mb-2" />
                 <p className="text-sm text-muted-foreground">
-                  {event.maxAttendees - event.currentAttendees} spots remaining
+                  {event.max_attendees - event.current_attendees} spots remaining
                 </p>
               </CardContent>
             </Card>
