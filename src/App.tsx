@@ -7,6 +7,7 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import EventDetails from "./pages/EventDetails";
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import CheckIn from "./pages/CheckIn";
 import NotFound from "./pages/NotFound";
 
@@ -23,6 +24,7 @@ const App = () => (
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/dashboard/events/:id" element={<EventDetails />} />
           <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
           <Route path="/check-in/:id" element={<CheckIn />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
