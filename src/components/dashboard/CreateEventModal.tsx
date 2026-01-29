@@ -1,8 +1,9 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Calendar, Clock, MapPin, Users, X } from 'lucide-react';
+import { Calendar, Clock, MapPin, Users } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -14,16 +15,15 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@/components/ui/dialog';
-import { Event } from '@/types';
-import { toast } from '@/hooks/use-toast';
+import { Event } from '@/hooks/useEvents';
 
 const eventSchema = z.object({
-  title: z.string().min(3, 'Title must be at least 3 characters'),
-  description: z.string().min(10, 'Description must be at least 10 characters'),
+  title: z.string().trim().min(3, 'Title must be at least 3 characters').max(100),
+  description: z.string().trim().min(10, 'Description must be at least 10 characters').max(500),
   date: z.string().min(1, 'Date is required'),
   time: z.string().min(1, 'Time is required'),
-  location: z.string().min(3, 'Location must be at least 3 characters'),
-  maxAttendees: z.number().min(1, 'Must have at least 1 attendee'),
+  location: z.string().trim().min(3, 'Location must be at least 3 characters').max(200),
+  max_attendees: z.number().min(1, 'Must have at least 1 attendee').max(10000),
 });
 
 type EventFormData = z.infer<typeof eventSchema>;
@@ -48,53 +48,51 @@ export const CreateEventModal = ({
     reset,
   } = useForm<EventFormData>({
     resolver: zodResolver(eventSchema),
-    defaultValues: editEvent
-      ? {
-          title: editEvent.title,
-          description: editEvent.description,
-          date: editEvent.date,
-          time: editEvent.time,
-          location: editEvent.location,
-          maxAttendees: editEvent.maxAttendees,
-        }
-      : {
-          title: '',
-          description: '',
-          date: '',
-          time: '',
-          location: '',
-          maxAttendees: 100,
-        },
+    defaultValues: {
+      title: '',
+      description: '',
+      date: '',
+      time: '',
+      location: '',
+      max_attendees: 100,
+    },
   });
 
-  const handleFormSubmit = async (data: EventFormData) => {
-    try {
-      const eventData: Partial<Event> = {
-        ...data,
-        id: editEvent?.id || `event-${Date.now()}`,
-        status: 'upcoming',
-        currentAttendees: editEvent?.currentAttendees || 0,
-        qrCode: editEvent?.qrCode || `event-${Date.now()}`,
-        createdAt: editEvent?.createdAt || new Date().toISOString(),
-        organizerId: 'user-1',
-      };
-
-      onSubmit(eventData);
-      toast({
-        title: editEvent ? 'Event updated!' : 'Event created!',
-        description: editEvent
-          ? 'Your event has been updated successfully.'
-          : 'Your new event has been created.',
+  useEffect(() => {
+    if (editEvent) {
+      reset({
+        title: editEvent.title,
+        description: editEvent.description || '',
+        date: editEvent.date,
+        time: editEvent.time,
+        location: editEvent.location,
+        max_attendees: editEvent.max_attendees,
       });
-      reset();
-      onClose();
-    } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
+    } else {
+      reset({
+        title: '',
+        description: '',
+        date: '',
+        time: '',
+        location: '',
+        max_attendees: 100,
       });
     }
+  }, [editEvent, reset, open]);
+
+  const handleFormSubmit = async (data: EventFormData) => {
+    const eventData: Partial<Event> = {
+      title: data.title,
+      description: data.description,
+      date: data.date,
+      time: data.time,
+      location: data.location,
+      max_attendees: data.max_attendees,
+      status: 'upcoming',
+    };
+
+    onSubmit(eventData);
+    reset();
   };
 
   return (
@@ -176,19 +174,19 @@ export const CreateEventModal = ({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="maxAttendees" className="flex items-center gap-2">
+            <Label htmlFor="max_attendees" className="flex items-center gap-2">
               <Users className="h-4 w-4 text-muted-foreground" />
               Maximum Attendees
             </Label>
             <Input
-              id="maxAttendees"
+              id="max_attendees"
               type="number"
               min="1"
-              {...register('maxAttendees', { valueAsNumber: true })}
+              {...register('max_attendees', { valueAsNumber: true })}
             />
-            {errors.maxAttendees && (
+            {errors.max_attendees && (
               <p className="text-sm text-destructive">
-                {errors.maxAttendees.message}
+                {errors.max_attendees.message}
               </p>
             )}
           </div>
@@ -198,7 +196,7 @@ export const CreateEventModal = ({
               Cancel
             </Button>
             <Button type="submit" disabled={isSubmitting}>
-              {editEvent ? 'Update Event' : 'Create Event'}
+              {isSubmitting ? 'Saving...' : editEvent ? 'Update Event' : 'Create Event'}
             </Button>
           </DialogFooter>
         </form>

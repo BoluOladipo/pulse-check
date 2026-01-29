@@ -21,7 +21,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Event } from '@/types';
+import { Event } from '@/hooks/useEvents';
 import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
 
 interface EventsListProps {
@@ -147,13 +147,13 @@ export const EventsList = ({
                     <div className="flex justify-between text-sm mb-1.5">
                       <span className="text-muted-foreground">Registered</span>
                       <span className="font-medium text-foreground">
-                        {event.currentAttendees} / {event.maxAttendees}
+                        {event.current_attendees} / {event.max_attendees}
                       </span>
                     </div>
                     <Progress
                       value={getAttendancePercentage(
-                        event.currentAttendees,
-                        event.maxAttendees
+                        event.current_attendees,
+                        event.max_attendees
                       )}
                       className="h-2"
                     />

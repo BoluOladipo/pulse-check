@@ -1,6 +1,8 @@
+import { useEffect } from 'react';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plus, Search, Filter } from 'lucide-react';
+import { Plus, Search, Filter, LogOut } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { StatsCards } from '@/components/dashboard/StatsCards';
 import { EventsList } from '@/components/dashboard/EventsList';
@@ -9,17 +11,45 @@ import { QRCodeModal } from '@/components/dashboard/QRCodeModal';
 import { CreateEventModal } from '@/components/dashboard/CreateEventModal';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { mockEvents, mockUser } from '@/data/mockData';
-import { Event } from '@/types';
-import { toast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { useEvents, Event } from '@/hooks/useEvents';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const Dashboard = () => {
-  const [events, setEvents] = useState<Event[]>(mockEvents);
+  const navigate = useNavigate();
+  const { user, profile, loading: authLoading, signOut } = useAuth();
+  const { events, loading: eventsLoading, createEvent, updateEvent, deleteEvent } = useEvents();
+  
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedEvent, setSelectedEvent] = useState<Event | null>(null);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate('/auth');
+    }
+  }, [user, authLoading, navigate]);
+
+  if (authLoading || (!user && !authLoading)) {
+    return (
+      <MainLayout showFooter={false}>
+        <div className="min-h-screen bg-background">
+          <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <Skeleton className="h-8 w-48 mb-2" />
+            <Skeleton className="h-4 w-64 mb-8" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-32" />
+              ))}
+            </div>
+            <Skeleton className="h-[300px] mb-8" />
+          </div>
+        </div>
+      </MainLayout>
+    );
+  }
 
   const filteredEvents = events.filter(
     (event) =>
@@ -37,25 +67,23 @@ const Dashboard = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleDelete = (eventId: string) => {
-    setEvents((prev) => prev.filter((e) => e.id !== eventId));
-    toast({
-      title: 'Event deleted',
-      description: 'The event has been removed.',
-    });
+  const handleDelete = async (eventId: string) => {
+    await deleteEvent(eventId);
   };
 
-  const handleCreateOrUpdateEvent = (eventData: Partial<Event>) => {
+  const handleCreateOrUpdateEvent = async (eventData: Partial<Event>) => {
     if (editingEvent) {
-      setEvents((prev) =>
-        prev.map((e) =>
-          e.id === editingEvent.id ? { ...e, ...eventData } : e
-        )
-      );
+      await updateEvent(editingEvent.id, eventData);
     } else {
-      setEvents((prev) => [eventData as Event, ...prev]);
+      await createEvent(eventData as any);
     }
     setEditingEvent(null);
+    setIsCreateModalOpen(false);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   return (
@@ -71,20 +99,29 @@ const Dashboard = () => {
             <div>
               <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
               <p className="text-muted-foreground">
-                Welcome back, {mockUser.name}
+                Welcome back, {profile?.full_name || user?.email}
               </p>
             </div>
-            <Button
-              variant="hero"
-              size="lg"
-              onClick={() => {
-                setEditingEvent(null);
-                setIsCreateModalOpen(true);
-              }}
-            >
-              <Plus className="h-5 w-5 mr-2" />
-              Create Event
-            </Button>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                onClick={handleSignOut}
+              >
+                <LogOut className="h-4 w-4 mr-2" />
+                Sign Out
+              </Button>
+              <Button
+                variant="hero"
+                size="lg"
+                onClick={() => {
+                  setEditingEvent(null);
+                  setIsCreateModalOpen(true);
+                }}
+              >
+                <Plus className="h-5 w-5 mr-2" />
+                Create Event
+              </Button>
+            </div>
           </motion.div>
 
           {/* Stats */}
@@ -123,30 +160,40 @@ const Dashboard = () => {
               </div>
             </div>
 
-            <EventsList
-              events={filteredEvents}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-              onViewQR={handleViewQR}
-            />
-
-            {filteredEvents.length === 0 && (
-              <div className="text-center py-12">
-                <p className="text-muted-foreground mb-4">
-                  {searchQuery
-                    ? 'No events match your search.'
-                    : 'No events yet. Create your first event!'}
-                </p>
-                {!searchQuery && (
-                  <Button
-                    variant="default"
-                    onClick={() => setIsCreateModalOpen(true)}
-                  >
-                    <Plus className="h-4 w-4 mr-2" />
-                    Create Event
-                  </Button>
-                )}
+            {eventsLoading ? (
+              <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-40" />
+                ))}
               </div>
+            ) : (
+              <>
+                <EventsList
+                  events={filteredEvents}
+                  onEdit={handleEdit}
+                  onDelete={handleDelete}
+                  onViewQR={handleViewQR}
+                />
+
+                {filteredEvents.length === 0 && (
+                  <div className="text-center py-12">
+                    <p className="text-muted-foreground mb-4">
+                      {searchQuery
+                        ? 'No events match your search.'
+                        : 'No events yet. Create your first event!'}
+                    </p>
+                    {!searchQuery && (
+                      <Button
+                        variant="default"
+                        onClick={() => setIsCreateModalOpen(true)}
+                      >
+                        <Plus className="h-4 w-4 mr-2" />
+                        Create Event
+                      </Button>
+                    )}
+                  </div>
+                )}
+              </>
             )}
           </motion.div>
         </div>

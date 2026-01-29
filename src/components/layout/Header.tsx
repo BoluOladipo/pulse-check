@@ -1,20 +1,31 @@
 import { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Menu, X, Zap, LogIn, LayoutDashboard } from 'lucide-react';
+import { Menu, X, Zap, LogIn, LayoutDashboard, LogOut, User } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/hooks/useAuth';
 
 const navLinks = [
   { href: '/', label: 'Home' },
   { href: '/features', label: 'Features' },
   { href: '/pricing', label: 'Pricing' },
+  { href: '/about', label: 'About' },
+  { href: '/contact', label: 'Contact' },
 ];
 
 export const Header = () => {
   const [isOpen, setIsOpen] = useState(false);
   const location = useLocation();
+  const navigate = useNavigate();
+  const { user, profile, signOut } = useAuth();
   const isDashboard = location.pathname.startsWith('/dashboard');
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
+    setIsOpen(false);
+  };
 
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b">
@@ -56,24 +67,44 @@ export const Header = () => {
 
           {/* Desktop Actions */}
           <div className="hidden md:flex items-center gap-3">
-            {isDashboard ? (
-              <Link to="/">
-                <Button variant="ghost" size="sm">
-                  Back to Home
+            {user ? (
+              <>
+                {isDashboard ? (
+                  <Link to="/">
+                    <Button variant="ghost" size="sm">
+                      Back to Home
+                    </Button>
+                  </Link>
+                ) : (
+                  <Link to="/dashboard">
+                    <Button variant="ghost" size="sm">
+                      <LayoutDashboard className="h-4 w-4 mr-2" />
+                      Dashboard
+                    </Button>
+                  </Link>
+                )}
+                <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-secondary/50">
+                  <User className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-sm font-medium text-foreground">
+                    {profile?.full_name || user.email?.split('@')[0]}
+                  </span>
+                </div>
+                <Button variant="outline" size="sm" onClick={handleSignOut}>
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
                 </Button>
-              </Link>
+              </>
             ) : (
               <>
-                <Link to="/login">
+                <Link to="/auth">
                   <Button variant="ghost" size="sm">
                     <LogIn className="h-4 w-4 mr-2" />
                     Sign In
                   </Button>
                 </Link>
-                <Link to="/dashboard">
+                <Link to="/auth">
                   <Button variant="hero" size="sm">
-                    <LayoutDashboard className="h-4 w-4 mr-2" />
-                    Dashboard
+                    Get Started
                   </Button>
                 </Link>
               </>
@@ -116,22 +147,34 @@ export const Header = () => {
                   </Link>
                 ))}
                 <div className="pt-3 border-t space-y-2">
-                  {isDashboard ? (
-                    <Link to="/" onClick={() => setIsOpen(false)}>
-                      <Button variant="outline" className="w-full">
-                        Back to Home
+                  {user ? (
+                    <>
+                      <div className="px-4 py-2 text-sm text-muted-foreground">
+                        Signed in as {profile?.full_name || user.email}
+                      </div>
+                      {!isDashboard && (
+                        <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                          <Button variant="default" className="w-full">
+                            <LayoutDashboard className="h-4 w-4 mr-2" />
+                            Dashboard
+                          </Button>
+                        </Link>
+                      )}
+                      <Button variant="outline" className="w-full" onClick={handleSignOut}>
+                        <LogOut className="h-4 w-4 mr-2" />
+                        Sign Out
                       </Button>
-                    </Link>
+                    </>
                   ) : (
                     <>
-                      <Link to="/login" onClick={() => setIsOpen(false)}>
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
                         <Button variant="outline" className="w-full">
                           Sign In
                         </Button>
                       </Link>
-                      <Link to="/dashboard" onClick={() => setIsOpen(false)}>
+                      <Link to="/auth" onClick={() => setIsOpen(false)}>
                         <Button variant="hero" className="w-full">
-                          Dashboard
+                          Get Started
                         </Button>
                       </Link>
                     </>

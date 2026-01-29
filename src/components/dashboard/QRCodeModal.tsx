@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
-import { X, Download, Copy, Check } from 'lucide-react';
+import { Download, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -8,7 +8,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { Event } from '@/types';
+import { Event } from '@/hooks/useEvents';
 import { toast } from '@/hooks/use-toast';
 
 interface QRCodeModalProps {

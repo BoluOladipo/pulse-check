@@ -12,8 +12,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Attendee } from '@/types';
-import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
+import { Attendee } from '@/hooks/useEvents';
 
 interface AttendeesTableProps {
   attendees: Attendee[];
@@ -26,7 +25,7 @@ export const AttendeesTable = ({
   onCheckIn,
   onExportCSV,
 }: AttendeesTableProps) => {
-  const formatTime = (dateStr?: string) => {
+  const formatTime = (dateStr?: string | null) => {
     if (!dateStr) return '-';
     const date = new Date(dateStr);
     return date.toLocaleTimeString('en-US', {
@@ -100,10 +99,10 @@ export const AttendeesTable = ({
                     </div>
                   </TableCell>
                   <TableCell className="text-muted-foreground">
-                    {formatDate(attendee.registrationTime)}
+                    {formatDate(attendee.registration_time)}
                   </TableCell>
                   <TableCell>
-                    {attendee.checkedIn ? (
+                    {attendee.checked_in ? (
                       <Badge variant="active" className="gap-1">
                         <Check className="h-3 w-3" />
                         Checked In
@@ -116,17 +115,17 @@ export const AttendeesTable = ({
                     )}
                   </TableCell>
                   <TableCell>
-                    {attendee.checkInTime ? (
+                    {attendee.check_in_time ? (
                       <div className="flex items-center gap-1 text-muted-foreground">
                         <Clock className="h-4 w-4" />
-                        {formatTime(attendee.checkInTime)}
+                        {formatTime(attendee.check_in_time)}
                       </div>
                     ) : (
                       <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
                   <TableCell className="text-right">
-                    {!attendee.checkedIn && (
+                    {!attendee.checked_in && (
                       <Button
                         variant="success"
                         size="sm"
