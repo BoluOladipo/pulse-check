@@ -3,6 +3,7 @@ import { Zap, Users, Award, Globe } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent } from '@/components/ui/card';
 import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
+import founderImage from '@/assets/founder-ceo.jpg';
 
 const stats = [
   { label: 'Events Managed', value: '10,000+' },
@@ -16,7 +17,7 @@ const team = [
     name: 'Bolu Oladipo',
     role: 'Founder & CEO',
     bio: 'Full-stack developer with a passion for creating seamless event experiences.',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Bolu',
+    avatar: founderImage,
   },
 ];
 
@@ -151,7 +152,7 @@ const About = () => {
                     <img
                       src={member.avatar}
                       alt={member.name}
-                      className="h-24 w-24 rounded-full mx-auto mb-4 bg-secondary"
+                      className="h-32 w-32 rounded-full mx-auto mb-4 bg-secondary object-cover shadow-lg"
                     />
                     <h3 className="font-semibold text-foreground">
                       {member.name}

@@ -4,7 +4,7 @@ import { motion } from 'framer-motion';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff, User } from 'lucide-react';
+import { Zap, Mail, Lock, ArrowRight, Eye, EyeOff, User, CheckCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -37,6 +37,8 @@ const Auth = () => {
   const [isLogin, setIsLogin] = useState(location.pathname !== '/register');
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState('');
 
   useEffect(() => {
     if (user && !authLoading) {
@@ -61,6 +63,9 @@ const Auth = () => {
       let message = error.message;
       if (message.includes('Invalid login credentials')) {
         message = 'Invalid email or password. Please try again.';
+      }
+      if (message.includes('Email not confirmed')) {
+        message = 'Please confirm your email before signing in. Check your inbox for the confirmation link.';
       }
       toast({
         title: 'Login failed',
@@ -93,17 +98,90 @@ const Auth = () => {
       return;
     }
     
+    // Show email confirmation message
+    setRegisteredEmail(data.email);
+    setEmailSent(true);
     toast({
-      title: 'Account created!',
-      description: 'Welcome to EventPulse. You are now logged in.',
+      title: 'Check your email!',
+      description: 'We sent you a confirmation link to verify your account.',
     });
-    navigate('/dashboard');
   };
 
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  // Email confirmation success screen
+  if (emailSent) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-background via-primary/5 to-background p-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="w-full max-w-md"
+        >
+          {/* Logo */}
+          <Link to="/" className="flex items-center justify-center gap-2 mb-8">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-primary-foreground shadow-lg">
+              <Zap className="h-5 w-5" />
+            </div>
+            <span className="text-2xl font-bold text-foreground">
+              Event<span className="text-primary">Pulse</span>
+            </span>
+          </Link>
+
+          <Card variant="elevated">
+            <CardContent className="pt-8 pb-8 text-center">
+              <div className="flex justify-center mb-6">
+                <div className="flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
+                  <CheckCircle className="h-8 w-8 text-success" />
+                </div>
+              </div>
+              
+              <h2 className="text-2xl font-bold text-foreground mb-2">
+                Check Your Email
+              </h2>
+              <p className="text-muted-foreground mb-6">
+                We've sent a confirmation link to:
+              </p>
+              <p className="font-medium text-primary mb-6 bg-primary/10 rounded-lg py-2 px-4 inline-block">
+                {registeredEmail}
+              </p>
+              <p className="text-sm text-muted-foreground mb-6">
+                Click the link in the email to confirm your account and start using EventPulse.
+              </p>
+
+              <div className="space-y-3">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => {
+                    setEmailSent(false);
+                    setIsLogin(true);
+                  }}
+                >
+                  <ArrowRight className="h-4 w-4 mr-2" />
+                  Go to Sign In
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Didn't receive the email? Check your spam folder or{' '}
+                  <button
+                    type="button"
+                    onClick={() => setEmailSent(false)}
+                    className="text-primary hover:underline"
+                  >
+                    try again
+                  </button>
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
     );
   }

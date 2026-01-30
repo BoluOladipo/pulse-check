@@ -1,10 +1,13 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, QrCode, Users, BarChart3, Zap, Sparkles } from 'lucide-react';
+import { ArrowRight, QrCode, Users, BarChart3, Zap, Sparkles, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
+import { useAuth } from '@/hooks/useAuth';
 
 export const HeroSection = () => {
+  const { user } = useAuth();
+
   return (
     <section className="relative overflow-hidden pt-16 pb-20 lg:pt-28 lg:pb-32">
       {/* Background gradient */}
@@ -72,22 +75,41 @@ export const HeroSection = () => {
             and create memorable events. The modern solution for event organizers.
           </motion.p>
 
-          {/* CTA Buttons */}
+          {/* CTA Buttons - Different for logged in vs logged out users */}
           <motion.div
             variants={staggerItem}
             className="flex flex-col sm:flex-row gap-4 justify-center items-center"
           >
-            <Link to="/dashboard">
-              <Button variant="hero" size="xl" className="group">
-                Get Started Free
-                <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
-              </Button>
-            </Link>
-            <Link to="/demo">
-              <Button variant="outline" size="xl">
-                View Demo
-              </Button>
-            </Link>
+            {user ? (
+              <>
+                <Link to="/dashboard">
+                  <Button variant="hero" size="xl" className="group">
+                    Go to Dashboard
+                    <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/pricing">
+                  <Button variant="outline" size="xl" className="group">
+                    <Crown className="h-5 w-5 mr-2 text-primary" />
+                    Upgrade Plan
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/auth">
+                  <Button variant="hero" size="xl" className="group">
+                    Get Started Free
+                    <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </Button>
+                </Link>
+                <Link to="/features">
+                  <Button variant="outline" size="xl">
+                    Learn More
+                  </Button>
+                </Link>
+              </>
+            )}
           </motion.div>
 
           {/* Stats */}
