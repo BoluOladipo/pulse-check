@@ -1,9 +1,12 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Zap } from 'lucide-react';
+import { ArrowRight, Zap, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 
 export const CTASection = () => {
+  const { user } = useAuth();
+
   return (
     <section className="py-20 lg:py-28 bg-primary/5">
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
@@ -26,36 +29,62 @@ export const CTASection = () => {
             </div>
 
             <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold text-primary-foreground mb-4">
-              Ready to Revolutionize Your Events?
+              {user ? 'Unlock More Features' : 'Ready to Revolutionize Your Events?'}
             </h2>
             <p className="text-lg text-primary-foreground/80 max-w-2xl mx-auto mb-8">
-              Join thousands of event organizers who trust EventPulse for seamless 
-              check-ins and real-time attendance tracking.
+              {user 
+                ? 'Upgrade to Pro or Enterprise for unlimited events, advanced analytics, and priority support.'
+                : 'Join thousands of event organizers who trust EventPulse for seamless check-ins and real-time attendance tracking.'}
             </p>
 
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link to="/dashboard">
-                <Button
-                  size="xl"
-                  className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg group"
-                >
-                  Start for Free
-                  <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
-                </Button>
-              </Link>
-              <Link to="/contact">
-                <Button
-                  size="xl"
-                  variant="outline"
-                  className="border-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
-                >
-                  Contact Sales
-                </Button>
-              </Link>
+              {user ? (
+                <>
+                  <Link to="/pricing">
+                    <Button
+                      size="xl"
+                      className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg group"
+                    >
+                      <Crown className="h-5 w-5 mr-2" />
+                      Upgrade Now
+                    </Button>
+                  </Link>
+                  <Link to="/dashboard">
+                    <Button
+                      size="xl"
+                      variant="outline"
+                      className="border-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
+                    >
+                      Go to Dashboard
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/auth">
+                    <Button
+                      size="xl"
+                      className="bg-primary-foreground text-primary hover:bg-primary-foreground/90 shadow-lg group"
+                    >
+                      Start for Free
+                      <ArrowRight className="h-5 w-5 ml-1 group-hover:translate-x-1 transition-transform" />
+                    </Button>
+                  </Link>
+                  <Link to="/contact">
+                    <Button
+                      size="xl"
+                      variant="outline"
+                      className="border-2 border-primary-foreground/30 text-primary-foreground hover:bg-primary-foreground/10 bg-transparent"
+                    >
+                      Contact Sales
+                    </Button>
+                  </Link>
+                </>
+              )}
             </div>
 
             <p className="text-sm text-primary-foreground/60 mt-6">
-              No credit card required • Free forever for small events
+              {user ? 'Flexible plans for teams of all sizes' : 'No credit card required • Free forever for small events'}
             </p>
           </div>
         </motion.div>
