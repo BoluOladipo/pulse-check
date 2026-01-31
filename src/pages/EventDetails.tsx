@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -9,7 +9,9 @@ import {
   Users,
   QrCode,
   Edit,
+  FileSpreadsheet,
 } from 'lucide-react';
+import * as XLSX from 'xlsx';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { AttendeesTable } from '@/components/dashboard/AttendeesTable';
 import { QRCodeModal } from '@/components/dashboard/QRCodeModal';
@@ -21,7 +23,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/hooks/useAuth';
 import { useEventById, Event } from '@/hooks/useEvents';
 import { toast } from '@/hooks/use-toast';
-import { useState } from 'react';
 
 const EventDetails = () => {
   const { id } = useParams();
@@ -104,31 +105,83 @@ const EventDetails = () => {
     await checkInAttendee(attendeeId);
   };
 
-  const handleExportCSV = () => {
-    const headers = ['Name', 'Email', 'Registered', 'Checked In', 'Check-in Time'];
-    const csvContent = [
-      headers.join(','),
-      ...attendees.map((a) =>
-        [
-          a.name,
-          a.email,
-          a.registration_time,
-          a.checked_in ? 'Yes' : 'No',
-          a.check_in_time || '',
-        ].join(',')
-      ),
-    ].join('\n');
+  const handleExportExcel = () => {
+    const checkedInAttendees = attendees.filter((a) => a.checked_in);
+    const notCheckedInAttendees = attendees.filter((a) => !a.checked_in);
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${event.title.replace(/\s+/g, '-')}-attendees.csv`;
-    link.click();
+    // Create summary data
+    const summaryData = [
+      ['Event Summary Report'],
+      [],
+      ['Event Name', event.title],
+      ['Date', formatDate(event.date)],
+      ['Time', event.time],
+      ['Location', event.location],
+      [],
+      ['Total Registered', attendees.length],
+      ['Total Checked In', checkedInAttendees.length],
+      ['Total Not Checked In', notCheckedInAttendees.length],
+      ['Check-in Rate', `${attendees.length > 0 ? Math.round((checkedInAttendees.length / attendees.length) * 100) : 0}%`],
+    ];
+
+    // Create attendees data
+    const attendeesData = [
+      ['Name', 'Email', 'Registration Date', 'Status', 'Check-in Time'],
+      ...attendees.map((a) => [
+        a.name,
+        a.email,
+        new Date(a.registration_time).toLocaleString(),
+        a.checked_in ? 'Checked In' : 'Not Checked In',
+        a.check_in_time ? new Date(a.check_in_time).toLocaleString() : '-',
+      ]),
+    ];
+
+    // Create workbook with multiple sheets
+    const workbook = XLSX.utils.book_new();
+
+    // Summary sheet
+    const summarySheet = XLSX.utils.aoa_to_sheet(summaryData);
+    summarySheet['!cols'] = [{ wch: 20 }, { wch: 40 }];
+    XLSX.utils.book_append_sheet(workbook, summarySheet, 'Summary');
+
+    // All attendees sheet
+    const attendeesSheet = XLSX.utils.aoa_to_sheet(attendeesData);
+    attendeesSheet['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 20 }, { wch: 15 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(workbook, attendeesSheet, 'All Attendees');
+
+    // Checked in attendees sheet
+    const checkedInData = [
+      ['Name', 'Email', 'Check-in Time'],
+      ...checkedInAttendees.map((a) => [
+        a.name,
+        a.email,
+        a.check_in_time ? new Date(a.check_in_time).toLocaleString() : '-',
+      ]),
+    ];
+    const checkedInSheet = XLSX.utils.aoa_to_sheet(checkedInData);
+    checkedInSheet['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(workbook, checkedInSheet, 'Checked In');
+
+    // Not checked in attendees sheet
+    const notCheckedInData = [
+      ['Name', 'Email', 'Registration Date'],
+      ...notCheckedInAttendees.map((a) => [
+        a.name,
+        a.email,
+        new Date(a.registration_time).toLocaleString(),
+      ]),
+    ];
+    const notCheckedInSheet = XLSX.utils.aoa_to_sheet(notCheckedInData);
+    notCheckedInSheet['!cols'] = [{ wch: 25 }, { wch: 30 }, { wch: 20 }];
+    XLSX.utils.book_append_sheet(workbook, notCheckedInSheet, 'Not Checked In');
+
+    // Generate and download file
+    const fileName = `${event.title.replace(/\s+/g, '-')}-attendance-report.xlsx`;
+    XLSX.writeFile(workbook, fileName);
 
     toast({
       title: 'Export successful',
-      description: 'Attendee list has been downloaded as CSV.',
+      description: 'Attendance report has been downloaded as Excel file.',
     });
   };
 
@@ -311,7 +364,7 @@ const EventDetails = () => {
             <AttendeesTable
               attendees={attendees}
               onCheckIn={handleCheckIn}
-              onExportCSV={handleExportCSV}
+              onExportExcel={handleExportExcel}
             />
           </motion.div>
         </div>
