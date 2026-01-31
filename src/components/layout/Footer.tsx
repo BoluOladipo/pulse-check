@@ -23,7 +23,7 @@ const socialLinks = [
   { href: 'https://twitter.com/boluoladipocodes', icon: Twitter, label: 'Twitter' },
   { href: 'https://github.com/boluoladipocodes', icon: Github, label: 'GitHub' },
   { href: 'https://linkedin.com/in/boluoladipo', icon: Linkedin, label: 'LinkedIn' },
-  { href: 'mailto:hello@boluoladipocodes.com', icon: Mail, label: 'Email' },
+  { href: 'mailto:boluemmanuel071@gmail.com', icon: Mail, label: 'Email' },
 ];
 
 export const Footer = () => {

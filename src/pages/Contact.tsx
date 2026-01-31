@@ -25,20 +25,20 @@ const contactInfo = [
   {
     icon: Mail,
     title: 'Email',
-    value: 'hello@eventpulse.com',
-    href: 'mailto:hello@eventpulse.com',
+    value: 'boluemmanuel071@gmail.com',
+    href: 'mailto:boluemmanuel071@gmail.com',
   },
   {
     icon: Phone,
     title: 'Phone',
-    value: '+234 (0) 800 123 4567',
-    href: 'tel:+2348001234567',
+    value: '07075800632',
+    href: 'tel:+2347075800632',
   },
   {
     icon: MapPin,
-    title: 'Office',
-    value: 'Lagos, Nigeria',
-    href: null,
+    title: 'WhatsApp',
+    value: '+48 608 863 629',
+    href: 'https://wa.me/48608863629',
   },
 ];
 
