@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Check, X, Mail, Clock } from 'lucide-react';
+import { Check, X, Mail, Clock, FileSpreadsheet } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -17,13 +17,13 @@ import { Attendee } from '@/hooks/useEvents';
 interface AttendeesTableProps {
   attendees: Attendee[];
   onCheckIn?: (attendeeId: string) => void;
-  onExportCSV?: () => void;
+  onExportExcel?: () => void;
 }
 
 export const AttendeesTable = ({
   attendees,
   onCheckIn,
-  onExportCSV,
+  onExportExcel,
 }: AttendeesTableProps) => {
   const formatTime = (dateStr?: string | null) => {
     if (!dateStr) return '-';
@@ -56,8 +56,9 @@ export const AttendeesTable = ({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle className="text-lg">Attendee List</CardTitle>
-        <Button variant="outline" size="sm" onClick={onExportCSV}>
-          Export CSV
+        <Button variant="outline" size="sm" onClick={onExportExcel} className="gap-2">
+          <FileSpreadsheet className="h-4 w-4" />
+          Export Excel
         </Button>
       </CardHeader>
       <CardContent className="p-0">
