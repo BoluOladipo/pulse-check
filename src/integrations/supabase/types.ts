@@ -130,6 +130,48 @@ export type Database = {
         }
         Relationships: []
       }
+      subscriptions: {
+        Row: {
+          amount: number | null
+          created_at: string
+          currency: string | null
+          expires_at: string | null
+          flutterwave_transaction_id: string | null
+          flutterwave_tx_ref: string | null
+          id: string
+          plan: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          flutterwave_transaction_id?: string | null
+          flutterwave_tx_ref?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number | null
+          created_at?: string
+          currency?: string | null
+          expires_at?: string | null
+          flutterwave_transaction_id?: string | null
+          flutterwave_tx_ref?: string | null
+          id?: string
+          plan?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

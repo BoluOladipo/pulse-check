@@ -1,21 +1,21 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Link } from 'react-router-dom';
-import { Check, ArrowRight, CreditCard, Building2, Phone, Mail, Copy, CheckCircle } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Check, ArrowRight, CreditCard, Loader2 } from 'lucide-react';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { staggerContainer, staggerItem } from '@/components/layout/PageTransition';
 import { useAuth } from '@/hooks/useAuth';
+import { useSubscription } from '@/hooks/useSubscription';
 import { toast } from '@/hooks/use-toast';
 
 const plans = [
   {
+    id: 'free' as const,
     name: 'Free',
-    price: '₦0',
-    priceUSD: '$0',
+    price: '$0',
     period: 'forever',
     description: 'Perfect for small events and getting started.',
     features: [
@@ -27,13 +27,12 @@ const plans = [
     ],
     cta: 'Get Started',
     popular: false,
-    priceAmount: 0,
   },
   {
+    id: 'pro' as const,
     name: 'Pro',
-    price: '₦25,000',
-    priceUSD: '$29',
-    period: 'per month',
+    price: '$29',
+    period: 'per year',
     description: 'For growing organizations with regular events.',
     features: [
       'Unlimited events',
@@ -46,13 +45,12 @@ const plans = [
     ],
     cta: 'Upgrade to Pro',
     popular: true,
-    priceAmount: 25000,
   },
   {
+    id: 'enterprise' as const,
     name: 'Enterprise',
-    price: 'Custom',
-    priceUSD: 'Custom',
-    period: 'contact us',
+    price: '$99',
+    period: 'per year',
     description: 'For large organizations with complex needs.',
     features: [
       'Everything in Pro',
@@ -63,55 +61,87 @@ const plans = [
       'On-premise deployment',
       'SLA guarantee',
     ],
-    cta: 'Contact Sales',
+    cta: 'Upgrade to Enterprise',
     popular: false,
-    priceAmount: null,
   },
 ];
 
-const bankDetails = {
-  bankName: 'UBA (United Bank for Africa)',
-  accountNumber: '2239431200',
-  accountName: 'Bolu Emmanuel',
-  phone: '07075800632',
-  email: 'boluemmanuel071@gmail.com',
-};
-
 const Pricing = () => {
   const { user } = useAuth();
-  const [selectedPlan, setSelectedPlan] = useState<typeof plans[0] | null>(null);
-  const [showPaymentModal, setShowPaymentModal] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
+  const { currentPlan, initiatePayment, loading: subscriptionLoading } = useSubscription();
+  const [processingPlan, setProcessingPlan] = useState<string | null>(null);
+  const navigate = useNavigate();
 
-  const handlePlanSelect = (plan: typeof plans[0]) => {
-    if (plan.name === 'Free') {
-      // Redirect to auth/dashboard
-      return;
-    }
-    if (plan.name === 'Enterprise') {
-      // Redirect to contact
-      return;
-    }
-    setSelectedPlan(plan);
-    setShowPaymentModal(true);
-  };
-
-  const copyToClipboard = async (text: string, field: string) => {
-    try {
-      await navigator.clipboard.writeText(text);
-      setCopiedField(field);
+  const handleUpgrade = async (planId: 'pro' | 'enterprise') => {
+    if (!user) {
       toast({
-        title: 'Copied!',
-        description: `${field} copied to clipboard`,
-      });
-      setTimeout(() => setCopiedField(null), 2000);
-    } catch {
-      toast({
-        title: 'Failed to copy',
-        description: 'Please copy manually',
+        title: 'Please sign in',
+        description: 'You need to be logged in to upgrade your plan.',
         variant: 'destructive',
       });
+      navigate('/auth');
+      return;
     }
+
+    setProcessingPlan(planId);
+    try {
+      await initiatePayment(planId);
+      // User will be redirected to Flutterwave
+    } catch (error) {
+      console.error('Payment error:', error);
+      toast({
+        title: 'Payment Failed',
+        description: error instanceof Error ? error.message : 'Failed to initialize payment',
+        variant: 'destructive',
+      });
+      setProcessingPlan(null);
+    }
+  };
+
+  const getPlanButton = (plan: typeof plans[0]) => {
+    const isCurrentPlan = currentPlan === plan.id;
+    const isProcessing = processingPlan === plan.id;
+    
+    if (isCurrentPlan) {
+      return (
+        <Button variant="outline" className="w-full" disabled>
+          <Check className="h-4 w-4 mr-2" />
+          Current Plan
+        </Button>
+      );
+    }
+
+    if (plan.id === 'free') {
+      return (
+        <Link to={user ? '/dashboard' : '/auth'} className="w-full block">
+          <Button variant="outline" className="w-full">
+            {user ? 'Go to Dashboard' : plan.cta}
+            <ArrowRight className="h-4 w-4 ml-2" />
+          </Button>
+        </Link>
+      );
+    }
+
+    return (
+      <Button
+        variant={plan.popular ? 'hero' : 'outline'}
+        className="w-full"
+        onClick={() => handleUpgrade(plan.id as 'pro' | 'enterprise')}
+        disabled={isProcessing || subscriptionLoading}
+      >
+        {isProcessing ? (
+          <>
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            Processing...
+          </>
+        ) : (
+          <>
+            <CreditCard className="h-4 w-4 mr-2" />
+            {plan.cta}
+          </>
+        )}
+      </Button>
+    );
   };
 
   return (
@@ -133,8 +163,13 @@ const Pricing = () => {
             </h1>
             <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
               Choose the plan that fits your needs. All plans include core features.
-              No hidden fees.
+              No hidden fees. Secure payment via Flutterwave.
             </p>
+            {currentPlan !== 'free' && (
+              <Badge variant="active" className="mt-4">
+                You're on the {currentPlan.charAt(0).toUpperCase() + currentPlan.slice(1)} plan
+              </Badge>
+            )}
           </motion.div>
 
           <motion.div
@@ -150,7 +185,7 @@ const Pricing = () => {
                     plan.popular
                       ? 'border-primary shadow-lg shadow-primary/10'
                       : ''
-                  }`}
+                  } ${currentPlan === plan.id ? 'ring-2 ring-success' : ''}`}
                 >
                   {plan.popular && (
                     <Badge
@@ -166,11 +201,6 @@ const Pricing = () => {
                       <span className="text-4xl font-bold text-foreground">
                         {plan.price}
                       </span>
-                      {plan.priceUSD !== plan.price && (
-                        <span className="text-sm text-muted-foreground ml-2">
-                          ({plan.priceUSD})
-                        </span>
-                      )}
                       <span className="text-muted-foreground ml-2">
                         /{plan.period}
                       </span>
@@ -188,30 +218,7 @@ const Pricing = () => {
                         </li>
                       ))}
                     </ul>
-                    {plan.name === 'Free' ? (
-                      <Link to={user ? '/dashboard' : '/auth'}>
-                        <Button variant="outline" className="w-full">
-                          {user ? 'Go to Dashboard' : plan.cta}
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </Link>
-                    ) : plan.name === 'Enterprise' ? (
-                      <Link to="/contact">
-                        <Button variant="outline" className="w-full">
-                          {plan.cta}
-                          <ArrowRight className="h-4 w-4 ml-2" />
-                        </Button>
-                      </Link>
-                    ) : (
-                      <Button
-                        variant={plan.popular ? 'hero' : 'outline'}
-                        className="w-full"
-                        onClick={() => handlePlanSelect(plan)}
-                      >
-                        <CreditCard className="h-4 w-4 mr-2" />
-                        {plan.cta}
-                      </Button>
-                    )}
+                    {getPlanButton(plan)}
                   </CardContent>
                 </Card>
               </motion.div>
@@ -222,120 +229,24 @@ const Pricing = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.5 }}
-            className="text-center mt-12"
+            className="text-center mt-12 space-y-4"
           >
             <p className="text-muted-foreground">
-              All plans include a 14-day free trial. Secure payment via bank transfer.
+              Secure payments powered by Flutterwave. Cancel anytime.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Questions? Contact us at{' '}
+              <a href="mailto:boluemmanuel071@gmail.com" className="text-primary hover:underline">
+                boluemmanuel071@gmail.com
+              </a>{' '}
+              or{' '}
+              <a href="https://wa.me/48608863629" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">
+                WhatsApp
+              </a>
             </p>
           </motion.div>
         </div>
       </section>
-
-      {/* Payment Modal */}
-      <Dialog open={showPaymentModal} onOpenChange={setShowPaymentModal}>
-        <DialogContent className="sm:max-w-lg">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <CreditCard className="h-5 w-5 text-primary" />
-              Upgrade to {selectedPlan?.name}
-            </DialogTitle>
-            <DialogDescription>
-              Complete your payment via bank transfer to activate your {selectedPlan?.name} plan.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-6 py-4">
-            {/* Amount */}
-            <div className="bg-primary/5 rounded-xl p-4 text-center">
-              <p className="text-sm text-muted-foreground mb-1">Amount to Pay</p>
-              <p className="text-3xl font-bold text-primary">{selectedPlan?.price}</p>
-              <p className="text-sm text-muted-foreground">{selectedPlan?.priceUSD} USD equivalent</p>
-            </div>
-
-            {/* Bank Details */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground flex items-center gap-2">
-                <Building2 className="h-4 w-4" />
-                Bank Transfer Details
-              </h4>
-              
-              <div className="space-y-2">
-                <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Bank Name</p>
-                    <p className="font-medium text-foreground">{bankDetails.bankName}</p>
-                  </div>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Account Number</p>
-                    <p className="font-medium text-foreground font-mono">{bankDetails.accountNumber}</p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => copyToClipboard(bankDetails.accountNumber, 'Account number')}
-                  >
-                    {copiedField === 'Account number' ? (
-                      <CheckCircle className="h-4 w-4 text-success" />
-                    ) : (
-                      <Copy className="h-4 w-4" />
-                    )}
-                  </Button>
-                </div>
-
-                <div className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Account Name</p>
-                    <p className="font-medium text-foreground">{bankDetails.accountName}</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Info */}
-            <div className="space-y-3">
-              <h4 className="font-semibold text-foreground">After Payment</h4>
-              <p className="text-sm text-muted-foreground">
-                Send your payment confirmation to activate your account:
-              </p>
-              
-              <div className="flex flex-col gap-2">
-                <a 
-                  href={`tel:${bankDetails.phone}`}
-                  className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
-                >
-                  <Phone className="h-4 w-4 text-primary" />
-                  <span className="text-foreground">{bankDetails.phone}</span>
-                </a>
-                
-                <a 
-                  href={`mailto:${bankDetails.email}?subject=EventPulse ${selectedPlan?.name} Plan Payment`}
-                  className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg hover:bg-secondary transition-colors"
-                >
-                  <Mail className="h-4 w-4 text-primary" />
-                  <span className="text-foreground">{bankDetails.email}</span>
-                </a>
-              </div>
-            </div>
-
-            {/* WhatsApp CTA */}
-            <a
-              href={`https://wa.me/234${bankDetails.phone.slice(1)}?text=${encodeURIComponent(
-                `Hello, I just made a payment for the EventPulse ${selectedPlan?.name} plan (${selectedPlan?.price}). Please activate my account. My email is: `
-              )}`}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <Button variant="hero" className="w-full">
-                Send Payment Confirmation via WhatsApp
-                <ArrowRight className="h-4 w-4 ml-2" />
-              </Button>
-            </a>
-          </div>
-        </DialogContent>
-      </Dialog>
     </MainLayout>
   );
 };

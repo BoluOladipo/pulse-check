@@ -1,1 +1,7 @@
 project_id = "ejpiaucjlrppraukowci"
+
+[functions.flutterwave-init]
+verify_jwt = false
+
+[functions.flutterwave-webhook]
+verify_jwt = false
