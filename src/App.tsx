@@ -15,6 +15,7 @@ import About from "./pages/About";
 import Contact from "./pages/Contact";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import NotFound from "./pages/NotFound";
+import AcademicPaper from "./pages/AcademicPaper";
 
 const queryClient = new QueryClient();
 
@@ -38,6 +39,7 @@ const App = () => (
             <Route path="/payment-success" element={<PaymentSuccess />} />
             <Route path="/about" element={<About />} />
             <Route path="/contact" element={<Contact />} />
+            <Route path="/paper" element={<AcademicPaper />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
