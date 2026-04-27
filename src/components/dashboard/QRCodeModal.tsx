@@ -22,7 +22,7 @@ export const QRCodeModal = ({ event, open, onClose }: QRCodeModalProps) => {
 
   if (!event) return null;
 
-  const checkInUrl = `${window.location.origin}/checkin/${event.id}`;
+  const checkInUrl = `${window.location.origin}/register/${event.id}`;
 
   const handleCopyLink = async () => {
     try {

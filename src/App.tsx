@@ -8,7 +8,8 @@ import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import EventDetails from "./pages/EventDetails";
 import Auth from "./pages/Auth";
-import CheckIn from "./pages/CheckIn";
+import Register from "./pages/Register";
+import Scanner from "./pages/Scanner";
 import Features from "./pages/Features";
 import Pricing from "./pages/Pricing";
 import About from "./pages/About";
@@ -30,10 +31,11 @@ const App = () => (
             <Route path="/" element={<Index />} />
             <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/dashboard/events/:id" element={<EventDetails />} />
+            <Route path="/dashboard/events/:id/scan" element={<Scanner />} />
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
-            <Route path="/register" element={<Auth />} />
-            <Route path="/check-in/:id" element={<CheckIn />} />
+            <Route path="/signup" element={<Auth />} />
+            <Route path="/register/:id" element={<Register />} />
             <Route path="/features" element={<Features />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/payment-success" element={<PaymentSuccess />} />
