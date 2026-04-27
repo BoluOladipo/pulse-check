@@ -10,6 +10,7 @@ import {
   QrCode,
   Edit,
   FileSpreadsheet,
+  ScanLine,
 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { MainLayout } from '@/components/layout/MainLayout';
@@ -221,13 +222,20 @@ const EventDetails = () => {
                   {event.description}
                 </p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="default"
+                  onClick={() => navigate(`/dashboard/events/${event.id}/scan`)}
+                >
+                  <ScanLine className="h-4 w-4 mr-2" />
+                  Scan Check-in
+                </Button>
                 <Button
                   variant="outline"
                   onClick={() => setIsQRModalOpen(true)}
                 >
                   <QrCode className="h-4 w-4 mr-2" />
-                  QR Code
+                  Registration QR
                 </Button>
                 <Button variant="outline">
                   <Edit className="h-4 w-4 mr-2" />
