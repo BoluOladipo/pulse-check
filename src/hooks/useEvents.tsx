@@ -27,6 +27,7 @@ export interface Attendee {
   checked_in: boolean;
   check_in_time: string | null;
   registration_time: string;
+  qr_token: string;
 }
 
 export const useEvents = () => {
@@ -261,10 +262,10 @@ export const usePublicEvent = (eventId: string | undefined) => {
     fetchEvent();
   }, [eventId]);
 
-  const registerAndCheckIn = async (name: string, email: string) => {
-    if (!eventId) return { error: new Error('No event ID') };
+  const register = async (name: string, email: string): Promise<{ data: Attendee | null; error: Error | null }> => {
+    if (!eventId) return { data: null, error: new Error('No event ID') };
 
-    // First try to find existing registration
+    // If already registered, return existing record (so they can re-display QR)
     const { data: existingAttendee } = await supabase
       .from('attendees')
       .select('*')
@@ -273,38 +274,57 @@ export const usePublicEvent = (eventId: string | undefined) => {
       .maybeSingle();
 
     if (existingAttendee) {
-      // Update to checked in
-      const { error } = await supabase
-        .from('attendees')
-        .update({
-          checked_in: true,
-          check_in_time: new Date().toISOString(),
-        })
-        .eq('id', existingAttendee.id);
-
-      if (error) {
-        return { error };
-      }
-      return { error: null };
+      return { data: existingAttendee as Attendee, error: null };
     }
 
-    // New registration + check-in
-    const { error } = await supabase
+    // New registration — NOT checked in. Host must scan QR at the event.
+    const { data, error } = await supabase
       .from('attendees')
       .insert({
         event_id: eventId,
         name,
         email,
-        checked_in: true,
-        check_in_time: new Date().toISOString(),
-      });
+        checked_in: false,
+      })
+      .select()
+      .single();
 
-    return { error };
+    if (error) return { data: null, error };
+    return { data: data as Attendee, error: null };
   };
 
   return {
     event,
     loading,
-    registerAndCheckIn,
+    register,
   };
+};
+
+export const checkInByToken = async (token: string) => {
+  // Look up attendee
+  const { data: attendee, error: lookupError } = await supabase
+    .from('attendees')
+    .select('*, events!inner(id, title, status)')
+    .eq('qr_token', token)
+    .maybeSingle();
+
+  if (lookupError) return { error: lookupError, attendee: null, alreadyCheckedIn: false };
+  if (!attendee) return { error: new Error('Invalid QR code'), attendee: null, alreadyCheckedIn: false };
+
+  if ((attendee as any).events?.status === 'ended') {
+    return { error: new Error('This event has ended'), attendee: attendee as any, alreadyCheckedIn: false };
+  }
+
+  if (attendee.checked_in) {
+    return { error: null, attendee: attendee as any, alreadyCheckedIn: true };
+  }
+
+  const { error: updateError } = await supabase
+    .from('attendees')
+    .update({ checked_in: true, check_in_time: new Date().toISOString() })
+    .eq('qr_token', token);
+
+  if (updateError) return { error: updateError, attendee: attendee as any, alreadyCheckedIn: false };
+
+  return { error: null, attendee: attendee as any, alreadyCheckedIn: false };
 };

@@ -22,7 +22,7 @@ export const QRCodeModal = ({ event, open, onClose }: QRCodeModalProps) => {
 
   if (!event) return null;
 
-  const checkInUrl = `${window.location.origin}/checkin/${event.id}`;
+  const checkInUrl = `${window.location.origin}/register/${event.id}`;
 
   const handleCopyLink = async () => {
     try {
@@ -69,7 +69,7 @@ export const QRCodeModal = ({ event, open, onClose }: QRCodeModalProps) => {
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Event QR Code</DialogTitle>
+          <DialogTitle>Event Registration QR Code</DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col items-center py-6">
@@ -89,8 +89,8 @@ export const QRCodeModal = ({ event, open, onClose }: QRCodeModalProps) => {
           <h3 className="font-semibold text-foreground text-center mb-1">
             {event.title}
           </h3>
-          <p className="text-sm text-muted-foreground text-center mb-4">
-            Scan to check in to this event
+          <p className="text-sm text-muted-foreground text-center mb-4 max-w-xs">
+            Share this link or print this QR code so attendees can register and get their personal check-in QR.
           </p>
 
           <div className="flex gap-2 w-full">
